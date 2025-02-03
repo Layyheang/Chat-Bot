@@ -107,7 +107,7 @@ const login = async () => {
 }
 
 .bg-form{
-    background: linear-gradient(to top, #9db2dc, #0e2d6c 70%);
+    background: linear-gradient(to top, #424f68, #0e2d6c 70%);
 }
 :deep(.input-field) {
     border-radius: 0;

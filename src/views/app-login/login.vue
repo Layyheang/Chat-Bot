@@ -23,7 +23,7 @@ import headerTime from './components/header-time.vue';
 
 <style lang="scss" scoped>
 .login-background {
-    background: linear-gradient(to bottom, #3b3a66, #3d274e 60%);
+    background: linear-gradient(to bottom, #3b3a66, #1f6581 60%);
     padding: 2rem;
     width: 100%;
     height: 100vh;
