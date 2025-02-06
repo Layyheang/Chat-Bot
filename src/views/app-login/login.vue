@@ -1,4 +1,4 @@
-<script setup lang="ts">
+<script setup>
 import Login from '../app-login/components/login-form.vue'
 import headerTime from './components/header-time.vue';
 </script>

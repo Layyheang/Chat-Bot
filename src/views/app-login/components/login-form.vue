@@ -1,28 +1,22 @@
-
 <script setup>
 import { computed, ref } from "vue";
 import InputText from "primevue/inputtext";
 import Password from "primevue/password";
-import Button from "primevue/button"; 
+import Button from "primevue/button";
 import { required, helpers } from "@vuelidate/validators";
 import useVuelidate from "@vuelidate/core";
-import { useRouter } from "vue-router"; 
-// Define reactive fields
+import { useRouter } from "vue-router";
+import { AuthAPI } from "@/service/configApi";
+
 const email = ref("");
 const password = ref("");
-const isloading = ref(false);
-const router = useRouter(); 
-const rules = computed(() => {
-    return {
-        email: {
-            required: helpers.withMessage("email is required", required)
-        },
+const isLoading = ref(false);
+const router = useRouter();
 
-        password: {
-            required: helpers.withMessage("Password is required", required),
-        }
-    }
-})
+const rules = computed(() => ({
+    email: { required: helpers.withMessage("Email is required", required) },
+    password: { required: helpers.withMessage("Password is required", required) }
+}));
 
 const v$ = useVuelidate(rules, { email, password });
 
@@ -34,17 +28,28 @@ const login = async () => {
             return;
         }
 
-        isloading.value = true;
-        setTimeout(() => {
-            router.push('/homepage'); 
-            isloading.value = false;
-        }, 1000); 
+        isLoading.value = true;
+
+        const response = await AuthAPI.login(email.value, password.value);
+
+        // Store Tokens
+        localStorage.setItem("access_token", response.data.access_token);
+        localStorage.setItem("refresh_token", response.data.refresh_token);
+
+        // Redirect after successful login
+        router.push("/homepage");
     } catch (error) {
-        console.error("An error occurred during login:", error);
-        isloading.value = false;
+        console.error("Login failed:", error.response?.data?.detail || error.message);
+    } finally {
+        isLoading.value = false;
     }
 };
+
+const logout = () => {
+    AuthAPI.logout(); // Call API service to log out
+};
 </script>
+
 
 <template>
     <div class="login-form">
@@ -80,7 +85,7 @@ const login = async () => {
                     <div class="flex flex-col items-center justify-center p-[3rem]">
                         <Button label="Login" rounded outlined @click="login" :loading="isloading"
                             class="bg-[#156896] w-[8rem] h-[3rem] text-white shadow-lg shadow-[rgba(32,28,28,0.4)] hover:shadow-lg hover:shadow-cyan-500/50" />
-                            <Button class="flex  mt-9 text-white" @click="register">Register Account</Button>
+                            <Button class="flex mt-9 text-white" @click="register">Register Account</Button>
                     </div>
                 </div>
             </div>
