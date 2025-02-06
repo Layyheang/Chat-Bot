@@ -1,7 +1,7 @@
 import { createApp } from 'vue'
 import './style.css'
 import App from './app/App.vue'
-import router from './app/app-routes';
+import router from './router';
 import PrimeVue from 'primevue/config';
 import 'primeicons/primeicons.css';
 import Aura from '@primevue/themes/aura';
@@ -10,7 +10,6 @@ import ConfirmationService from 'primevue/confirmationservice';
 import { Tooltip } from 'primevue';
 import { createPinia } from 'pinia'
 import 'primeicons/primeicons.css';
-// import './app/assets/custom_style.css';
 
 
 const app = createApp(App)

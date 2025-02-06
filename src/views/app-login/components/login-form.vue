@@ -7,6 +7,7 @@ import { required, helpers } from "@vuelidate/validators";
 import useVuelidate from "@vuelidate/core";
 import { useRouter } from "vue-router";
 import { AuthAPI } from "@/service/configApi";
+import Swal from "sweetalert2";
 
 const email = ref("");
 const password = ref("");
@@ -24,7 +25,7 @@ const login = async () => {
     try {
         const isValid = await v$.value.$validate();
         if (!isValid) {
-            console.log("Validation failed");
+            Swal.fire("Validation Failed", "Please fill in all fields correctly", "warning");
             return;
         }
 
@@ -32,24 +33,52 @@ const login = async () => {
 
         const response = await AuthAPI.login(email.value, password.value);
 
-        // Store Tokens
+        // ✅ Store Tokens
         localStorage.setItem("access_token", response.data.access_token);
         localStorage.setItem("refresh_token", response.data.refresh_token);
 
-        // Redirect after successful login
-        router.push("/homepage");
+        // ✅ Show success message
+        Swal.fire({
+            icon: "success",
+            title: "Login Successful",
+            text: "Redirecting to dashboard...",
+            timer: 1500,
+            showConfirmButton: false,
+        });
+
+        // ✅ Redirect after successful login
+        setTimeout(() => router.push("/"), 1500);
     } catch (error) {
-        console.error("Login failed:", error.response?.data?.detail || error.message);
+        console.error("Login Error:", error);
+
+        if (error.response?.status === 401) {
+            // 🔹 Handle Unauthorized (Incorrect Credentials)
+            Swal.fire({
+                icon: "error",
+                title: "Unauthorized",
+                text: "Invalid email or password. Please try again.",
+            });
+        } else if (error.response?.status === 500) {
+            // 🔹 Handle Server Errors
+            Swal.fire({
+                icon: "error",
+                title: "Server Error",
+                text: "Something went wrong. Please try again later.",
+            });
+        } else {
+            // 🔹 Handle Other Errors
+            Swal.fire({
+                icon: "error",
+                title: "Login Failed",
+                text: error.response?.data?.detail || "Something went wrong",
+            });
+        }
     } finally {
         isLoading.value = false;
     }
 };
 
-const logout = () => {
-    AuthAPI.logout(); // Call API service to log out
-};
 </script>
-
 
 <template>
     <div class="login-form">
@@ -67,7 +96,6 @@ const logout = () => {
                         <span class="w-[300px] flex input-field">
                             <InputText id="email" v-model="email" type="text" class="input-field-inputtext"
                                 placeholder="Email" />
-                            <i class="pi pi-user input-field-icon" />
                         </span>
                         <small v-if="v$.email.$error" class="text-red-500 mt-1">
                             {{ v$.email.$errors[0]?.$message }}
@@ -83,9 +111,10 @@ const logout = () => {
                         </small>
                     </div>
                     <div class="flex flex-col items-center justify-center p-[3rem]">
-                        <Button label="Login" rounded outlined @click="login" :loading="isloading"
+                        <Button label="Login" rounded outlined @click="login" :loading="isLoading"
                             class="bg-[#156896] w-[8rem] h-[3rem] text-white shadow-lg shadow-[rgba(32,28,28,0.4)] hover:shadow-lg hover:shadow-cyan-500/50" />
-                            <Button class="flex mt-9 text-white" @click="register">Register Account</Button>
+                        <Button class="flex mt-6 text-white" @click="router.push('/register')">Don't have an account?
+                            Register Account</Button>
                     </div>
                 </div>
             </div>
@@ -111,9 +140,10 @@ const logout = () => {
     }
 }
 
-.bg-form{
+.bg-form {
     background: linear-gradient(to top, #424f68, #0e2d6c 70%);
 }
+
 :deep(.input-field) {
     border-radius: 0;
     border: none;
@@ -137,13 +167,6 @@ const logout = () => {
     }
 }
 
-:deep(.input-field-icon) {
-    padding: 4px;
-    padding-left: 5.6rem;
-    background-color: transparent;
-    color: rgba(255, 255, 255, 0.5);
-}
-
 :deep(.p-inputtext) {
     color: white;
 }
@@ -159,9 +182,5 @@ const logout = () => {
         border-bottom: 2px solid rgb(6, 182, 212);
         outline: none;
     }
-}
-
-:deep(.p-password .p-input-icon-right) {
-    color: white;
 }
 </style>
