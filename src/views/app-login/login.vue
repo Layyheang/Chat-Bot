@@ -6,7 +6,7 @@ import headerTime from '../../components/header-time.vue';
 <template>
     <div class="login-background flex-col ">
         <header-time></header-time>
-        <div>
+        <div class="mt-8">
             <Login />
         </div>
 
