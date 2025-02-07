@@ -6,7 +6,10 @@ const API_BASE_URL = import.meta.env.VITE_API_BASE_URL;
 // Create Axios instance with default config
 const api = axios.create({
   baseURL: API_BASE_URL,
-  headers: { "Content-Type": "application/json" },
+  headers: { 
+    "Content-Type": "application/json",
+  },
+  withCredentials: true // Enable sending cookies and auth headers
 });
 
 // Request Interceptor: Attach Access Token
@@ -16,6 +19,7 @@ api.interceptors.request.use(
     if (accessToken) {
       config.headers["Authorization"] = `Bearer ${accessToken}`;
     }
+    config.headers["Access-Control-Allow-Credentials"] = true;
     return config;
   },
   (error) => Promise.reject(error)
@@ -27,15 +31,9 @@ api.interceptors.response.use(
   async (error) => {
     const originalRequest = error.config;
 
-    // Ignore 401 errors on login or register routes
-    if (
-      originalRequest.url.includes("/auth/login") ||
-      originalRequest.url.includes("/auth/register")
-    ) {
-      return Promise.reject(error);
-    }
+    if (!originalRequest._retry && error.response?.status === 401) {
+      originalRequest._retry = true; // Prevent infinite loop
 
-    if (error.response?.status === 401) {
       try {
         const refreshToken = localStorage.getItem("refresh_token");
         if (!refreshToken) {
@@ -44,16 +42,22 @@ api.interceptors.response.use(
 
         const refreshResponse = await axios.post(
           `${API_BASE_URL}/auth/refresh-token`,
+          { refresh_token: refreshToken },
           {
-            refresh_token: refreshToken,
+            withCredentials: true,
+            headers: {
+              "Content-Type": "application/json",
+              "Access-Control-Allow-Credentials": true
+            }
           }
         );
 
         // Update new tokens
-        localStorage.setItem("access_token", refreshResponse.data.access_token);
-        error.config.headers[
-          "Authorization"
-        ] = `Bearer ${refreshResponse.data.access_token}`;
+        const newAccessToken = refreshResponse.data.access_token;
+        localStorage.setItem("access_token", newAccessToken);
+        
+        // Update Authorization header
+        originalRequest.headers["Authorization"] = `Bearer ${newAccessToken}`;
 
         // Retry original request
         return api(originalRequest);
